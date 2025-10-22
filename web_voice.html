@@ -130,7 +130,7 @@
             formData.append('user_id', userId.value);
 
             try {
-                const res = await fetch('/process_voice', {
+                const res = await fetch('https://roa-server-production.up.railway.app/process_voice', {
                     method: 'POST',
                     body: formData
                 });
