@@ -93,30 +93,50 @@
         const userId = document.getElementById('userId');
 
         recordBtn.addEventListener('click', async () => {
+            console.log('🔘 [Frontend] Record button clicked');
+            
             if (!mediaRecorder || mediaRecorder.state === 'inactive') {
-                // Start recording
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
+                console.log('▶️ [Frontend] Starting recording...');
+                
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    console.log('✅ [Frontend] Microphone access granted');
+                    console.log('🎤 [Frontend] Audio tracks:', stream.getAudioTracks().length);
+                    
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
 
-                mediaRecorder.ondataavailable = (event) => {
-                    audioChunks.push(event.data);
-                };
+                    mediaRecorder.ondataavailable = (event) => {
+                        console.log('📼 [Frontend] Audio chunk received:', event.data.size, 'bytes');
+                        audioChunks.push(event.data);
+                    };
 
-                mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    await processAudio(audioBlob);
-                };
+                    mediaRecorder.onstop = async () => {
+                        console.log('⏹️ [Frontend] Recording stopped');
+                        console.log('📦 [Frontend] Total chunks:', audioChunks.length);
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        console.log('🎵 [Frontend] Audio blob created:', audioBlob.size, 'bytes');
+                        await processAudio(audioBlob);
+                    };
 
-                mediaRecorder.start();
-                recordBtn.textContent = '⏹️ Stop Recording';
-                recordBtn.classList.add('recording');
-                status.textContent = '🎤 Recording...';
-                status.style.background = '#ffebee';
+                    mediaRecorder.start();
+                    console.log('🎙️ [Frontend] MediaRecorder started');
+                    recordBtn.textContent = '⏹️ Stop Recording';
+                    recordBtn.classList.add('recording');
+                    status.textContent = '🎤 Recording...';
+                    status.style.background = '#ffebee';
+                } catch (error) {
+                    console.error('❌ [Frontend] Microphone access error:', error);
+                    status.textContent = '❌ Microphone access denied';
+                    status.style.background = '#ffcdd2';
+                }
             } else {
-                // Stop recording
+                console.log('⏹️ [Frontend] Stopping recording...');
                 mediaRecorder.stop();
-                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                mediaRecorder.stream.getTracks().forEach(track => {
+                    console.log('🔇 [Frontend] Stopping track:', track.kind, track.label);
+                    track.stop();
+                });
                 recordBtn.textContent = '🎤 Click to Record';
                 recordBtn.classList.remove('recording');
                 status.textContent = '⏳ Processing...';
@@ -125,24 +145,40 @@
         });
 
         async function processAudio(audioBlob) {
+            console.log('🎙️ [Frontend] Starting audio processing');
+            console.log('📊 [Frontend] Audio blob size:', audioBlob.size, 'bytes');
+            console.log('👤 [Frontend] User ID:', userId.value);
+            
             const formData = new FormData();
             formData.append('audio', audioBlob);
             formData.append('user_id', userId.value);
 
             try {
+                console.log('🌐 [Frontend] Sending request to backend...');
+                const startTime = Date.now();
+                
                 const res = await fetch('https://roa-server-production.up.railway.app/process_voice', {
                     method: 'POST',
                     body: formData
                 });
 
+                const responseTime = Date.now() - startTime;
+                console.log(`⏱️ [Frontend] Response received in ${responseTime}ms`);
+                console.log('📡 [Frontend] Response status:', res.status, res.statusText);
+
                 const data = await res.json();
+                console.log('📦 [Frontend] Response data:', data);
                 
                 if (data.error) {
+                    console.error('❌ [Frontend] Error from backend:', data.error);
                     status.textContent = '❌ Error: ' + data.error;
                     status.style.background = '#ffcdd2';
                     return;
                 }
 
+                console.log('✅ [Frontend] Transcript:', data.transcript);
+                console.log('💬 [Frontend] Agent response:', data.response);
+                
                 transcript.textContent = data.transcript;
                 response.textContent = data.response;
                 status.textContent = '✅ Done!';
@@ -150,10 +186,13 @@
 
                 // Play audio response
                 if (data.audio_url) {
+                    console.log('🔊 [Frontend] Playing audio:', data.audio_url);
                     const audio = new Audio(data.audio_url);
                     audio.play();
                 }
             } catch (error) {
+                console.error('💥 [Frontend] Exception caught:', error);
+                console.error('📍 [Frontend] Error stack:', error.stack);
                 status.textContent = '❌ Error: ' + error.message;
                 status.style.background = '#ffcdd2';
             }
