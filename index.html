@@ -237,21 +237,16 @@
             try {
                 console.log('▶️ [Frontend] Starting recording...');
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: {
-                        sampleRate: 16000,    // Lower sample rate for smaller file
-                        channelCount: 1,       // Mono audio
-                        echoCancellation: true,
-                        noiseSuppression: true
-                    }
+                    audio: true
                 });
                 console.log('✅ [Frontend] Microphone access granted');
 
-                // Try opus codec first (smallest files), fall back to webm, then default
-                let options = { audioBitsPerSecond: 16000 };
+                // Use webm/opus format for better compression (without aggressive settings)
+                let options = {};
                 
                 if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
                     options.mimeType = 'audio/webm;codecs=opus';
-                    console.log('🎵 [Frontend] Using Opus codec (high compression)');
+                    console.log('🎵 [Frontend] Using Opus codec');
                 } else if (MediaRecorder.isTypeSupported('audio/webm')) {
                     options.mimeType = 'audio/webm';
                     console.log('🎵 [Frontend] Using WebM format');
