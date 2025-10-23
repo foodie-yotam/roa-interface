@@ -1,0 +1,17 @@
+{
+  "name": "ROA Voice",
+  "short_name": "ROA",
+  "description": "ROA Voice Assistant",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#091A05",
+  "theme_color": "#091A05",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "logo_foodweb.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
