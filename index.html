@@ -236,25 +236,10 @@
         async function startRecording() {
             try {
                 console.log('▶️ [Frontend] Starting recording...');
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: true
-                });
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 console.log('✅ [Frontend] Microphone access granted');
 
-                // Use webm/opus format for better compression (without aggressive settings)
-                let options = {};
-                
-                if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-                    options.mimeType = 'audio/webm;codecs=opus';
-                    console.log('🎵 [Frontend] Using Opus codec');
-                } else if (MediaRecorder.isTypeSupported('audio/webm')) {
-                    options.mimeType = 'audio/webm';
-                    console.log('🎵 [Frontend] Using WebM format');
-                } else {
-                    console.log('🎵 [Frontend] Using default codec');
-                }
-
-                mediaRecorder = new MediaRecorder(stream, options);
+                mediaRecorder = new MediaRecorder(stream);
                 audioChunks = [];
                 isRecording = true;
 
@@ -266,12 +251,8 @@
                 mediaRecorder.onstop = async () => {
                     console.log('⏹️ [Frontend] Recording stopped');
                     console.log('📦 [Frontend] Total chunks:', audioChunks.length);
-                    
-                    // Use the same mime type as recording
-                    const mimeType = mediaRecorder.mimeType || 'audio/webm';
-                    const audioBlob = new Blob(audioChunks, { type: mimeType });
-                    console.log('🎵 [Frontend] Audio blob created:', audioBlob.size, 'bytes', `(${mimeType})`);
-                    console.log('📊 [Frontend] Compression ratio:', audioBlob.size < 200000 ? '✅ Good' : '⚠️ Large');
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    console.log('🎵 [Frontend] Audio blob created:', audioBlob.size, 'bytes');
                     await processAudio(audioBlob);
                 };
 
