@@ -223,11 +223,20 @@
                 </ul>
             </div>
 
+            <div class="status-box">
+                <div class="status-label">Last Response:</div>
+                <div class="status-value" id="last-response" style="font-size: 12px; color: #d1d5db;">
+                    None
+                </div>
+            </div>
+
             <div class="info-banner">
                 <strong>💡 How to use:</strong><br>
                 • Click test buttons for quick demos<br>
                 • Or use ElevenLabs voice widget (bottom-right)<br>
-                • Speak naturally about recipes, inventory, or team tasks
+                • Speak naturally about recipes, inventory, or team tasks<br>
+                <br>
+                <strong>Stack:</strong> Voice → Agent → Text + Visual
             </div>
         </div>
 
@@ -487,31 +496,51 @@
             loading.classList.add('active');
             
             try {
-                const response = await fetch(`${SERVER_URL}/api/video-command`, {
+                // Call main agent endpoint (not dedicated video endpoint)
+                const response = await fetch(`${SERVER_URL}/chat`, {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
                         'stage': 'dev'  // Use dev environment for testing
                     },
-                    body: JSON.stringify({ text })
+                    body: JSON.stringify({ 
+                        message: text,
+                        user_id: 'visual-test-user'
+                    })
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Failed to get visualization');
+                    throw new Error('Failed to get response');
                 }
                 
-                const command = await response.json();
-                currentTool.textContent = command.tool;
+                const data = await response.json();
+                console.log('Agent response:', data);
                 
-                const visualizer = visualizationTools[command.tool];
-                if (visualizer) {
-                    visualizer(command.params);
+                // Update last response text
+                const lastResponse = document.getElementById('last-response');
+                if (data.response) {
+                    lastResponse.textContent = data.response.substring(0, 100) + '...';
+                }
+                
+                // Check if visualization is present
+                if (data.visualization) {
+                    const viz = data.visualization;
+                    currentTool.textContent = viz.tool;
+                    
+                    const visualizer = visualizationTools[viz.tool];
+                    if (visualizer) {
+                        visualizer(viz.params);
+                    } else {
+                        console.error('Unknown tool:', viz.tool);
+                        alert('Visualization tool not found: ' + viz.tool);
+                    }
                 } else {
-                    console.error('Unknown tool:', command.tool);
-                    alert('Visualization tool not found: ' + command.tool);
+                    // No visualization, just text response
+                    currentTool.textContent = 'None (text only)';
+                    console.log('Text response:', data.response);
                 }
             } catch (err) {
-                console.error('Visualization error:', err);
+                console.error('Error:', err);
                 alert('Error: Could not connect to server. Make sure backend is running.');
             } finally {
                 loading.classList.remove('active');
